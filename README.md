@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-These are Python utilities I'm building out as a traverse the machine learning landscape
+These are Python utilities I'm building out as I traverse the machine learning landscape
 
 
 ### Prerequisites
