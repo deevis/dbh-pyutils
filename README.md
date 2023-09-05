@@ -1,11 +1,8 @@
 # DBH PyUtils
 
-## Getting Started
-
 These are Python utilities I'm building out as I traverse the machine learning landscape
 
-
-### Prerequisites
+## Prerequisites
 
 You'll want to have Python > 3.10 installed
 
