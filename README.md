@@ -16,7 +16,7 @@ cd myprojects
 git clone https://github.com/deevis/dbh-pyutils.git
 cd dbh-pyutils
 python setup.py bdist_wheel
-pip install --force-reinstall .\dist\dbh-pyutils-0.1.0-py3-none-any.whl
+pip install --force-reinstall .\dist\dbh_pyutils-0.1.0-py3-none-any.whl
 ```
 
 
