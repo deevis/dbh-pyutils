@@ -1,6 +1,7 @@
 class PromptBuilder():
-    def __init__(self, llm_api):
+    def __init__(self, llm_api, debug=False):
         self.llm_api = llm_api
+        self.debug = debug
         self.llm_model_name = self.llm_api.get_llm_name()
 
     def infer_hashtags(self, text, sub_type=None, promptOnly=False):
@@ -112,9 +113,11 @@ End your response with <|end_of_turn|>
         else:
             raise "Cannot find template for this model: {self.llm_model_name}"    
 
-        # print('='*80)
-        # print(template)
-        # print('='*80)
+        if self.debug:
+            print("-"*80)
+            print(template)      
+            print("-"*80)
+        
         return template
     
         # Vicuna template
