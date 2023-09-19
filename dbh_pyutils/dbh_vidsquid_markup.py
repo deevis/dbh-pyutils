@@ -85,7 +85,7 @@ class VidsquidMarkup():
             data = r.json()
             whisper_txt = data['whisper_txt']
             print(f'Whisper text[{len(whisper_txt)} chars]: {whisper_txt}')
-            if len(whisper_txt) >= min_whisper_text_length:
+            if len(whisper_txt) >= self.min_whisper_text_length:
                 timings = {}
                 payload = {
                     'generating_model_name': self.llm_model_name,
