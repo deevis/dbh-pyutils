@@ -5,6 +5,7 @@ import torch
 from chromadb.config import Settings
 from chromadb.utils import embedding_functions
 import time
+import logging
 
 posthog.capture = lambda *args, **kwargs: None
 
