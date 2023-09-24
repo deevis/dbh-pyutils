@@ -4,8 +4,8 @@ from langchain.text_splitter import NLTKTextSplitter
 
 def chunkify(text, split_size: int = 400, min_chunk_size: int = 20):
     """Returns a list of strings of length `size`."""
-    if text is None or len(text) < min_chunk_size:
-        return []
+    if text is None or len(text) < split_size:
+        return [text]
     # Use NLTKTextSplitter to split text into sentences
     text_splitter = NLTKTextSplitter()
     sentences = text_splitter.split_text(text)    
@@ -29,7 +29,7 @@ def chunkify(text, split_size: int = 400, min_chunk_size: int = 20):
             chunks.append(chunk)
             chunk = ""
     if len(chunk) > 0:
-        if len(chunk) < 50 and len(chunks) > 0:
+        if len(chunk) < min_chunk_size and len(chunks) > 0:
             # just add it to the last chunk rather than adding it as a new chunk
             chunks[-1] += f'{chunk}\n'
         else:
