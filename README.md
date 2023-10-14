@@ -19,6 +19,10 @@ python setup.py bdist_wheel
 pip install --force-reinstall .\dist\dbh_pyutils-0.1.0-py3-none-any.whl
 ```
 
+## to deploy to pypi
+update version in setup.py
+`python setup.py sdist`
+`twine upload dist/*`
 
 ## Usage
 
