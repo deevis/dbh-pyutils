@@ -80,6 +80,11 @@ class TextGenerationWebuiAPI():
             body = self.get_llm_params()
         else:
             body = llm_params
+        if self.debug == True:
+            # dump params as formatted json
+            print("PARAMS:")
+            print(json.dumps(body, indent=4))
+            
         body['prompt'] = query
         start = time.time()
         url = f"{self.llm_api_host}{self.llm_generate_endpoint}"
