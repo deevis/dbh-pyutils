@@ -42,6 +42,7 @@ class TextGenerationWebuiAPI():
         return response.json()['result']
     
     def get_llm_params(self):
+        # TODO: make this configurable via a config file
         return {
             "temperature": 0.85,    # Primary factor to control randomness of outputs. 0 = deterministic (only the most likely token is used). Higher value = more randomness.
             "top_p": 0.1,           # If not set to 1, select tokens with probabilities adding up to less than this number. Higher value = higher range of possible random results.
@@ -65,7 +66,7 @@ class TextGenerationWebuiAPI():
             "seed": -1
         }
     
-    def query_llm(self, query):
+    def query_llm(self, query, llm_params=None):
         if self.debug == True:
             print('='*80)
             print(f'QUERY: \n\n{query}\n\n')
@@ -75,7 +76,10 @@ class TextGenerationWebuiAPI():
         # !!! even, EVEN BETTER results with TheBloke_guanaco-33B-GPTQ
         #
         # Parameters are mirroring LLaMA-Precise 
-        body = self.get_llm_params()
+        if llm_params is None:
+            body = self.get_llm_params()
+        else:
+            body = llm_params
         body['prompt'] = query
         start = time.time()
         url = f"{self.llm_api_host}{self.llm_generate_endpoint}"
