@@ -4,8 +4,8 @@ class PromptBuilder():
         self.debug = debug
         self.llm_model_name = self.llm_api.get_llm_name()
 
-    def infer_hashtags(self, text, sub_type=None, promptOnly=False):
-        prompt = self.build_prompt(text, "What would be the 5 most appropriate hashtags for the provided content?", "Opinionated answer:")
+    def infer_hashtags(self, text, sub_type=None, promptOnly=False, count: int = 5):
+        prompt = self.build_prompt(text, "What are the 5 most appropriate hashtags for the provided content?  Please return only the 5 best hashtags and make them camelcase.", "Opinionated answer:")
         if promptOnly == True:
             return prompt
         response = self.llm_api.query_llm(prompt)
@@ -14,7 +14,7 @@ class PromptBuilder():
         response = response.replace(".", "")
         response = response.replace("</s>","")
         hashtags = self.extract_hashtags(response)
-        hashtags_string = ", ".join(hashtags)
+        hashtags_string = ", ".join(hashtags[:count])
         return hashtags_string
 
     def infer_people(self, text, sub_type=None, promptOnly=False):
@@ -70,7 +70,7 @@ class PromptBuilder():
         if self.llm_model_name == 'TheBloke_MythoLogic-L2-13B-GPTQ_gptq-8bit-64g-actorder_True':
             # alpaca template
             # Good for: TheBloke_MythoLogic-L2-13B-GPTQ_gptq-8bit-64g-actorder_True
-            template = f"""Below is a transcript from a media file. Please consider it when evaluating instructions:
+            template = f"""You are an expert at summarizing text precisely as instructed.  Below is a transcript from a media file. Please consider it when evaluating instructions:
 {context}
 ###Instruction:
 {question}
@@ -80,31 +80,45 @@ class PromptBuilder():
             # 'TheBloke_guanaco-33B-GPTQ' 
             # 'TheBloke_guanaco-13B-SuperHOT-8K-GPTQ'
             # guanaco template - not working very well :()
-            template = f"Below is a transcript from a media file. Please consider it when evaluating instructions:\n{context}\n\nHuman: {question}\nAssistant:"
+            template = f"""
+You are an expert at summarizing text precisely as instructed.  Below is a transcript from a media file. Please consider it when evaluating instructions:
+<content>
+{context}
+</content>
+
+Human: {question}
+Assistant:
+"""
         elif self.llm_model_name == 'TheBloke_manticore-13b-chat-pyg-GPTQ':
             template = f"""USER: 
-Below is a transcript from a media file. Please consider it when evaluating instructions: 
+You are an expert at summarizing text precisely as instructed.  Below is a transcript from a media file. Please consider it when evaluating instructions: 
 
+<content>
 {context}
+</content>
 
 {question}
 
 ASSISTANT: """
         elif self.llm_model_name.startswith('TheBloke_vicuna'):
             template = f"""### Instruction:
-Below is a transcript from a media file. Please consider it when evaluating instructions:
+You are an expert at summarizing text precisely as instructed.  Below is a transcript from a media file. Please consider it when evaluating instructions:
 
+<content>
 {context}
+</content>
 
 {question}
 
 ### Response:"""
         elif self.llm_model_name.startswith('TheBloke_OpenOrca'):
             template = f"""### Instruction:
+You are an expert at summarizing text precisely as instructed.  
 Consider this content:  
 <content>
 {context}
 </content>
+
 {question}
 
 End your response with <|end_of_turn|>

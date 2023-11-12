@@ -122,7 +122,7 @@ class VidsquidMarkup():
                 #     }                        
                 #     # 'people_identified': people,
                 #     # 'places_identified': places
-                # }
+                # } 
                 # pretty print the payload
                 print(json.dumps(payload, indent=4))
                 # post our payload to populate_ai_markup endpoint in vidsquid
@@ -132,8 +132,14 @@ class VidsquidMarkup():
                 r = requests.post(populate_ai_markup_url, json=payload)
                 print(f"Status code: {r.status_code}")
                 print(f"Response: {r.json()}")
-
-                time.sleep(0.25)
+                # Status code: 200
+                # Response: {'error': "Mysql2::Error: Data too long for column 'hashtags_1' at row 1"}
+                if r.status_code != 200:
+                    raise SystemExit("Got non-200 response code from vidsquid populate_ai_markup endpoint")
+                
+                if 'error' in r.json():
+                    raise SystemExit(r.json()['error'])
+                time.sleep(0.1)
             else:
                 print(f'Skipping as whisper text is too short   {len(whisper_txt)} chars\n\n')
     

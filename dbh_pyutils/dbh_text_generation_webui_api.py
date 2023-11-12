@@ -110,7 +110,12 @@ if __name__ == "__main__":
     for llm_model_name in llm_model_names:
         tgwa = TextGenerationWebuiAPI(model_name=llm_model_name, debug=True)
         prompt_builder = PromptBuilder(tgwa)
-        text = "We were in the middle of our tournament when my friend John said he found a body in the bushes over there I ran over there because I'm a healing monk to try and help but obviously my magic wasn't strong enough because the dude Body was missing a head. So my friend decided to try to use a necromancer spell which didn't work Which I knew it wouldn't and apparently we contaminated the crime scene because that spell uses a lot of glitter"
+        text = """
+        We were in the middle of our tournament when my friend John said he found a body in the bushes over there 
+        I ran over there because I'm a healing monk to try and help but obviously my magic wasn't strong enough because the dude Body was missing a head. 
+        So my friend decided to try to use a necromancer spell which didn't work 
+        Which I knew it wouldn't and apparently we contaminated the crime scene because that spell uses a lot of glitter
+        """
         prompt_builder.infer_summary(text)
         print("Sleeping for 5 seconds...")
         time.sleep(5)
