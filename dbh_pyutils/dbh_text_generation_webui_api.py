@@ -21,7 +21,9 @@ class TextGenerationWebuiAPI():
             # load the requested model
             self.set_llm_model(model_name)
 
-        self.last_query_time = None
+        self.last_query = None              # keep this around for debugging should an error occur
+        self.last_llm_params = None         # keep this around for debugging should an error occur
+        self.last_query_time = None         # keep this around for tracking performance should anyone care
 
     def get_llm_name(self):
         url = f'{self.llm_api_host}{self.llm_model_endpoint}'
@@ -67,6 +69,7 @@ class TextGenerationWebuiAPI():
         }
     
     def query_llm(self, query, llm_params=None):
+        self.last_query = query
         if self.debug == True:
             print('='*80)
             print(f'QUERY: \n\n{query}\n\n')
@@ -80,6 +83,8 @@ class TextGenerationWebuiAPI():
             body = self.get_llm_params()
         else:
             body = llm_params
+        self.last_llm_params = body
+        
         if self.debug == True:
             # dump params as formatted json
             print("PARAMS:")
