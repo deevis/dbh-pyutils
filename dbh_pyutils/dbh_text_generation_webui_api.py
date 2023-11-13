@@ -1,9 +1,11 @@
 import requests
 import time
 import json
+import hashlib   # for caching
+import os
 
 class TextGenerationWebuiAPI():
-    def __init__(self, model_name: str = None, debug=False, api_host="http://127.0.0.1:5000"):
+    def __init__(self, model_name: str = None, debug=False, api_host="http://127.0.0.1:5000", cache_dir=None):
         self.llm_api_host = api_host
         self.llm_model_endpoint = "/api/v1/model"
         self.llm_generate_endpoint = "/api/v1/generate"
@@ -20,6 +22,10 @@ class TextGenerationWebuiAPI():
                 raise Exception(f"Model {model_name} not available")
             # load the requested model
             self.set_llm_model(model_name)
+        self.cache_dir = cache_dir
+        if self.cache_dir is not None:
+            print(f"Using cache directory {self.cache_dir}")
+            os.makedirs(self.cache_dir, exist_ok=True)
 
         self.last_query = None              # keep this around for debugging should an error occur
         self.last_llm_params = None         # keep this around for debugging should an error occur
@@ -84,13 +90,24 @@ class TextGenerationWebuiAPI():
         else:
             body = llm_params
         self.last_llm_params = body
-        
+
         if self.debug == True:
             # dump params as formatted json
             print("PARAMS:")
             print(json.dumps(body, indent=4))
             
         body['prompt'] = query
+        if self.cache_dir is not None:
+            # build an md5 of the entire body to use as a cache key
+            cache_key = hashlib.md5(json.dumps(body, sort_keys=True).encode('utf-8')).hexdigest()
+            # check if we have a cached response
+            cache_file = f"{self.cache_dir}/{cache_key}.json"
+            try:
+                with open(cache_file, 'r') as f:
+                    print(f"Using cached response from {cache_file}")
+                    return json.load(f)['results'][0]['text']
+            except FileNotFoundError:
+                pass
         start = time.time()
         url = f"{self.llm_api_host}{self.llm_generate_endpoint}"
         r = requests.post(url, json=body)
@@ -99,6 +116,10 @@ class TextGenerationWebuiAPI():
         print(f"Inferring: {url} - status code: {r.status_code} in {self.last_query_time} seconds") 
         if self.debug:
             print(f"\nResponse: {r.json()}")    
+        # cache the response
+        if self.cache_dir is not None:
+            with open(cache_file, 'w') as f:
+                json.dump(r.json(), f)
         return r.json()['results'][0]['text']
 
 if __name__ == "__main__":
