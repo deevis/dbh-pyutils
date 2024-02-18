@@ -2,10 +2,11 @@ class PromptBuilder():
     def __init__(self, llm_api, debug=False):
         self.llm_api = llm_api
         self.debug = debug
-        self.llm_model_name = self.llm_api.get_llm_name()
+        if llm_api is not None:
+            self.llm_model_name = self.llm_api.get_llm_name()
 
     def infer_hashtags(self, text, sub_type=None, promptOnly=False, count: int = 5):
-        prompt = self.build_prompt(text, "What are the 5 most appropriate hashtags for the provided content?  Please return only the 5 best hashtags and make them camelcase.", "Opinionated answer:")
+        prompt = self.build_prompt(text, "What are the 5 most appropriate hashtags for the provided content?  Please return only the 5 best hashtags starting with # and each word capitalized.", "Opinionated answer:")
         if promptOnly == True:
             return prompt
         response = self.llm_api.query_llm(prompt)
@@ -50,13 +51,23 @@ class PromptBuilder():
     def extract_hashtags(self, text):
         # initializing hashtag_list variable
         hashtag_list = []
-    
-        # splitting the text into words
-        for word in text.split():
-            # checking the first character of every word
-            if word[0] == '#' and len(word) > 2:
-                # adding the word to the hashtag_list
-                hashtag_list.append(word[1:])
+
+        # if we have a bunch of lines, each with a numbered hashtag, we need to split the text into lines
+        if "\n" in text and "#" not in text:
+            text = text.split("\n")
+            for line in text:
+                # if the line starts with a number and a space, we can assume it's a hashtag
+                if len(line) > 2 and line[0].isdigit() and line[1] == ' ':
+                    # adding the word to the hashtag_list
+                    hashtag_list.append(line[2:])
+
+        else:
+            # splitting the text into words
+            for word in text.split():
+                # checking the first character of every word
+                if word[0] == '#' and len(word) > 2:
+                    # adding the word to the hashtag_list
+                    hashtag_list.append(word[1:])
         return hashtag_list
 
     def build_prompt(self, context, question, response_type = 'Factual answer:'):
@@ -151,3 +162,11 @@ End your response with <|end_of_turn|>
 
         # ### Response:
         # """
+if __name__ == "__main__":
+    pb = PromptBuilder(None, debug=True)
+    for hashtags in ["\n1 paraprosdokians\n2 mitchhedberg\n3 stephenking\n4 homersimpson\n5 groucho_marx",
+                     "\n1. #Paraprosdokians\n2. #MitchHedberg\n3. #StephenKing\n4. #HomerSimpson\n5. #GrouchoMarx",
+                     "\n#paraprosdokians\n#mitchhedberg\n#stephenking\n#homersimpson\n#grouchomarx"]:
+        extracted = pb.extract_hashtags(hashtags)
+        print(extracted)
+
