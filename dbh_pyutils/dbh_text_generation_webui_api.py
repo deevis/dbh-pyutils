@@ -7,8 +7,14 @@ import os
 class TextGenerationWebuiAPI():
     def __init__(self, model_name: str = None, debug=False, api_host="http://127.0.0.1:5000", cache_dir=None):
         self.llm_api_host = api_host
-        self.llm_model_endpoint = "/api/v1/model"
-        self.llm_generate_endpoint = "/api/v1/generate"
+        
+        # The legacy Kobold API that was being used has been deprecated
+        # in favor of the text generation webui OpenAI API
+        # self.llm_model_endpoint = "/api/v1/model"
+        # self.llm_generate_endpoint = "/api/v1/generate"
+       
+        self.llm_generate_endpoint = "/v1/completions"
+
         self.debug = debug
         self.llm_model_name = self.get_llm_name()
         # output in yellow to make it stand out
@@ -32,28 +38,38 @@ class TextGenerationWebuiAPI():
         self.last_query_time = None         # keep this around for tracking performance should anyone care
 
     def get_llm_name(self):
-        url = f'{self.llm_api_host}{self.llm_model_endpoint}'
+        # https://github.com/oobabooga/text-generation-webui/blob/78380759904eb294e57fa2f287122c8e3866f236/extensions/openai/script.py#L268
+        url = f'{self.llm_api_host}/v1/internal/model/info'
         response = requests.get(url)
-        return response.json()['result']
+        return response.json()['model_name']
 
     def set_llm_model(self, model_name):
-        url = f'{self.llm_api_host}{self.llm_model_endpoint}'
-        payload = {'action': 'load', 'model_name': model_name}
+        # https://github.com/oobabooga/text-generation-webui/blob/78380759904eb294e57fa2f287122c8e3866f236/extensions/openai/script.py#L280
+        url = f'{self.llm_api_host}/v1/internal/model/load'
+        payload = {'model_name': model_name}
         # display in yellow to make it stand out
-        print(f"\033[93mLoading model {model_name}...\033[0m")
-        response = requests.post(url, json=payload)
-        return response.json()['result']
+        print(f"Loading model: \033[93m{model_name}...\033[0m")
+        # keep track of how long the model loading takes
+        start = time.time()
+        response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
+        print(f"Model loaded in: {time.time() - start} seconds")
+        # output the response in yellow to make it stand out
+        print(f"Response: \033[93m{response}\033[0m")
+        # show the text of the response
+        print(f"Response text: \033[93m{response.text}\033[0m")
+        return response.text
 
     def get_llm_models(self):
-        url = f'{self.llm_api_host}{self.llm_model_endpoint}'
-        response = requests.post(url, json={'action': 'list'})
-        return response.json()['result']
+        # https://github.com/oobabooga/text-generation-webui/blob/78380759904eb294e57fa2f287122c8e3866f236/extensions/openai/script.py#L274
+        url = f'{self.llm_api_host}/v1/internal/model/list'
+        response = requests.get(url)
+        return response.json()['model_names']
     
     def get_llm_params(self):
         # TODO: make this configurable via a config file
         return {
             "temperature": 0.85,    # Primary factor to control randomness of outputs. 0 = deterministic (only the most likely token is used). Higher value = more randomness.
-            "top_p": 0.1,           # If not set to 1, select tokens with probabilities adding up to less than this number. Higher value = higher range of possible random results.
+            "top_p": 0.6,           # If not set to 1, select tokens with probabilities adding up to less than this number. Higher value = higher range of possible random results.
             "top_k": 40,            # Similar to top_p, but select instead only the top_k most likely tokens. Higher value = higher range of possible random results.
             "typical_p": 1.0,       # If not set to 1, select only tokens that are at least this much more likely to appear than random tokens, given the prior text.
             "rep_pen": 1.18,        # Exponential penalty factor for repeating prior tokens. 1 means no penalty, higher value = less repetition, lower value = more repetition.
@@ -64,8 +80,9 @@ class TextGenerationWebuiAPI():
 
             # "stopping_strings": ['</s>'],
 
-            "max_length": 300,
-            "max_new_tokens": 250,
+            # "max_length": 500,
+            "max_tokens": 500,
+            "max_new_tokens": 350,
             "do_sample": "True",
             "min_length": 0,
             "num_beams": 1,
@@ -109,6 +126,7 @@ class TextGenerationWebuiAPI():
             except FileNotFoundError:
                 pass
         start = time.time()
+
         url = f"{self.llm_api_host}{self.llm_generate_endpoint}"
         r = requests.post(url, json=body)
         # {'results': [{'text': ' #OklahomaCityBombingConspiracyTheories #FBI #ATF #DOJ #CIA #SPLC #NSN #USArmy'}]}
@@ -120,16 +138,40 @@ class TextGenerationWebuiAPI():
         if self.cache_dir is not None:
             with open(cache_file, 'w') as f:
                 json.dump(r.json(), f)
-        return r.json()['results'][0]['text']
+        # The response has changed and now looks like:
+        # {
+        #     "id": "conv-1708235523222310400",
+        #     "object": "text_completion",
+        #     "created": 1708235523,
+        #     "model": "TheBloke_OpenOrca-Platypus2-13B-GPTQ_gptq-8bit-128g-actorder_True",
+        #     "choices": [
+        #         {
+        #             "index": 0,
+        #             "finish_reason": "stop",
+        #             "text": "\nIt is difficult to predict an exact date for the achievement of Artificial General Intelligence (AGI). The development of AGI will largely depend on advancements in various fields such as computer science, machine learning, neuroscience, and engineering. Some experts believe it could be achieved within the next few decades, while others think it might take much longer. As a prophet, I can't provide an exact date, but it's essential to stay informed about the ongoing research and progress in AI to understand how quickly we are moving towards AGI.",
+        #             "logprobs": {
+        #                 "top_logprobs": [
+        #                     {}
+        #                 ]
+        #             }
+        #         }
+        #     ],
+        #     "usage": {
+        #         "prompt_tokens": 53,
+        #         "completion_tokens": 123,
+        #         "total_tokens": 176
+        #     }
+        # }                
+        return r.json()['choices'][0]['text']
 
 if __name__ == "__main__":
     from dbh_pyutils.dbh_prompt_builder import PromptBuilder
     import time
 
     llm_model_names = [
-        "TheBloke_MythoLogic-L2-13B-GPTQ_gptq-8bit-64g-actorder_True",
         "TheBloke_OpenOrca-Platypus2-13B-GPTQ_gptq-8bit-128g-actorder_True",
         "TheBloke_guanaco-13B-SuperHOT-8K-GPTQ",
+        "TheBloke_MythoLogic-L2-13B-GPTQ_gptq-8bit-64g-actorder_True",
         "TheBloke_vicuna-13B-v1.5-16K-GPTQ_gptq-8bit-128g-actorder_True",
     ]
 
@@ -142,6 +184,9 @@ if __name__ == "__main__":
         So my friend decided to try to use a necromancer spell which didn't work 
         Which I knew it wouldn't and apparently we contaminated the crime scene because that spell uses a lot of glitter
         """
-        prompt_builder.infer_summary(text)
+        summary = prompt_builder.infer_summary(text)
+        print("="*80)
+        print(f"Summary:\n{summary}")
+        print("="*80)
         print("Sleeping for 5 seconds...")
         time.sleep(5)
