@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 setup(
     name='dbh-pyutils',
     packages=find_packages(),
-    version='0.1.10',
+    version='0.2.0',
     description='DBH Utils Python library',
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
